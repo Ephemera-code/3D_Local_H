@@ -1,6 +1,39 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <!--
+  🔤 Preload de fuentes personalizadas — hace que el navegador las descargue
+  en paralelo con el resto de los assets iniciales, ANTES de que el usuario
+  navegue a /galeria. Sin esto, la fuente recién se pide cuando el navegador
+  detecta un elemento visible que la necesita (primera vez que se monta
+  Galeria), y el "reemplazo" de la fuente de respaldo por la real causa un
+  reacomodo de texto — ese es el saltito que solo se nota la primera vez.
+
+  Ajustá las rutas si tus archivos de fuente están en otro lugar dentro de
+  /public/fonts. 'crossorigin' es obligatorio para fuentes, aunque sean del
+  mismo origen, o el navegador descarta el preload silenciosamente.
+  -->
+  <link
+    rel="preload"
+    href="/fonts/ClashDisplay-Bold.woff2"
+    as="font"
+    type="font/woff2"
+    crossorigin
+  />
+  <link
+    rel="preload"
+    href="/fonts/ClashDisplay-SemiBold.woff2"
+    as="font"
+    type="font/woff2"
+    crossorigin
+  />
+  <link
+    rel="preload"
+    href="/fonts/BodoniModaSC_48pt-ExtraBold.ttf"
+    as="font"
+    type="font/ttf"
+    crossorigin
+  />
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />

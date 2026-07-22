@@ -1,5 +1,8 @@
-import logo from '../../../public/logoH.png'
 import { siInstagram, siWhatsapp } from 'simple-icons'
+
+// 🖼️ Los assets dentro de /public NO se importan como módulo de JS (Vite no
+// lo permite) — se sirven directo desde la raíz del sitio como string.
+const LOGO_URL = '/logoH.png'
 
 interface HomeOverlayProps {
   visible: boolean
@@ -11,18 +14,18 @@ export function HomeOverlay({ visible }: HomeOverlayProps) {
   return (
     <>
       {/* Wordmark: chico, centrado arriba, no interfiere con el drag de la escena */}
-      <div className="absolute top-[6%] left-[42%] sm:left-[38%] md:left-1/2 -translate-x-1/2 z-40 pointer-events-none select-none">
-        <h1 className="text-[clamp(2.20rem,3vw,3rem)] FontGaleria tracking-wider uppercase flex items-center text-white m-0 leading-none">
+      <div className="absolute top-20 left-1/2 -translate-x-1/2 z-40 pointer-events-none select-none">
+        <h1 className="text-[clamp(2.50rem,3vw,3rem)] font-especial uppercase flex items-center text-white m-0 leading-none">
           HAMBR
           
           {/* Contenedor relativo SOLO para la E y el ícono */}
           <span className="relative font-especial inline-block">
             {/* La E invertida */}
-            <span className="inline-block  mb-1 -scale-x-100">E</span>
+            <span className="inline-block -scale-x-110">E</span>
             
             {/* El ícono */}
             <img
-              src={logo}
+              src={LOGO_URL}
               alt="Fuego"
               className="absolute -top-[50%] -right-[60%] w-[0.8em] h-[0.8em] rotate-45 object-contain"
             />
@@ -37,7 +40,7 @@ export function HomeOverlay({ visible }: HomeOverlayProps) {
           gradiente como borde). Sumamos un glow cálido y una insignia de
           estado para que se sienta "vivo", no plano. */}
       <div
-        className="absolute bottom-[18dvh] left-2 z-40 -rotate-1 select-none pointer-events-auto"
+        className="absolute bottom-[20dvh] left-2 z-40 -rotate-1 select-none pointer-events-auto"
         aria-label="Horario y redes"
       >
         <div
@@ -46,7 +49,7 @@ export function HomeOverlay({ visible }: HomeOverlayProps) {
             background: 'linear-gradient(135deg, rgba(255,69,0,0.6), rgba(245,158,11,0.15) 40%, rgba(39,39,42,0.4) 70%)'
           }}
         >
-          <div className="w-full h-full rounded-[11px] bg-zinc-950/95  p-4 flex flex-col gap-3">
+          <div className="w-full h-full rounded-[11px] bg-zinc-950/95 backdrop-blur-md p-4 flex flex-col gap-3">
 
             {/* Insignia de estado — le da la sensación de "vivo" que faltaba */}
             <div className="flex items-center justify-between">
@@ -55,11 +58,11 @@ export function HomeOverlay({ visible }: HomeOverlayProps) {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
-                <span className="text-[14px] font-mono uppercase tracking-widest text-emerald-400">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-400">
                   Abierto ahora
                 </span>
               </div>
-              <img src={logo} alt="" className="w-4 h-4 object-contain opacity-80" />
+              <img src={LOGO_URL} alt="" className="w-4 h-4 object-contain opacity-80" />
             </div>
 
             {/* Cabecera / Horarios */}
@@ -71,13 +74,13 @@ export function HomeOverlay({ visible }: HomeOverlayProps) {
                   background: 'linear-gradient(to right, rgba(255,69,0,0.5), rgba(39,39,42,0.2))'
                 }}
               />
-              <div className="flex items-center gap-2 text-white text-[14px] font-mono font-semibold">
+              <div className="flex items-center gap-2 text-white text-xs font-mono font-semibold">
                 <svg className="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span>Mié a Dom: 20:00 - 00:00 hs</span>
               </div>
-              <div className="flex items-center gap-2 text-zinc-300 text-[14px] font-mono">
+              <div className="flex items-center gap-2 text-zinc-300 text-xs font-mono">
                 <svg className="w-3.5 h-3.5 text-[#ff4500] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -88,7 +91,7 @@ export function HomeOverlay({ visible }: HomeOverlayProps) {
 
             {/* Redes Sociales y Acciones */}
             <div className="flex items-center justify-between pt-2">
-              <span className="text-[14px] font-mono uppercase tracking-wider text-zinc-400">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">
                 Seguinos / Pedidos
               </span>
 

@@ -16,6 +16,12 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
+    /* Path alias — debe coincidir con el 'resolve.alias' de vite.config.ts.
+       No hace falta 'baseUrl': TS usa la carpeta del tsconfig como base. */
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+
     /* Linting */
     "noUnusedLocals": true,
     "noUnusedParameters": true,

@@ -1,7 +1,25 @@
-import { useRef } from 'react'
+import { useRef, startTransition } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { HomeOverlay } from '../../components/scene/HomeOverlay'
 import { useEscena } from '../../context/EscenaContext'
+import { FOTOS } from '@/data/galeriaItems'
+
+// 🖼️ Precarga las fotos de la Galería en el caché del navegador ANTES de que
+// el usuario navegue de verdad. Se dispara en el primer hover/touch/focus del
+// botón — típicamente ocurre un instante antes del click real — así, cuando
+// se navega, las imágenes ya están descargadas y decodificadas, y no compiten
+// por el hilo principal justo cuando debería arrancar la animación de slide
+// (esa competencia era una de las causas del "saltito" al empezar la
+// transición).
+let fotosPrecargadas = false
+function precargarFotosGaleria() {
+  if (fotosPrecargadas) return
+  fotosPrecargadas = true
+  FOTOS.forEach((src) => {
+    const img = new Image()
+    img.src = src
+  })
+}
 
 export function Home() {
   const navigate = useNavigate()
@@ -36,10 +54,18 @@ export function Home() {
 
             {/* BOTÓN SECUNDARIO: GALERÍA — discreto, debajo del principal */}
             <button
+              onMouseEnter={precargarFotosGaleria}
+              onTouchStart={precargarFotosGaleria}
+              onFocus={precargarFotosGaleria}
               onClick={() => {
                 if (navegandoRef.current) return
                 navegandoRef.current = true
-                navigate('/galeria')
+                // startTransition: le avisa a React que el trabajo de montar
+                // /galeria (relativamente pesado: carrusel, listeners) no es
+                // urgente, así el navegador puede pintar el primer frame del
+                // slide sin que ese trabajo lo bloquee — evita el saltito al
+                // arrancar la transición.
+                startTransition(() => navigate('/galeria'))
               }}
               className="pointer-events-auto w-full py-4 flex items-center justify-center
                 bg-zinc-900/90 backdrop-blur-md border-t border-zinc-800/80
