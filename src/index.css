@@ -1,1 +1,56 @@
 @import "tailwindcss";
+/* src/index.css */
+/* 🎨 Fondo global oscuro — evita el flash blanco durante las transiciones de
+   ruta. Cuando navegás entre Home y Galería, Experiencia3D (el Canvas 3D) se
+   desvanece con su propio timing y Home es transparente (deja ver el 3D
+   detrás) — en el hueco entre ambas transiciones se expone el fondo del
+   documento. Sin esto, ese fondo es blanco por default del navegador.
+*/
+html,
+body {
+  margin: 0;
+  background-color: #09090b; /* mismo tono que bg-zinc-950 de Tailwind */
+  height: 100%;
+}
+ 
+#root {
+  height: 100%;
+}
+ 
+/* 1. Definimos la fuente */
+@font-face {
+  font-family: 'MiFuenteEspecial';
+  src: url('/fonts/BodoniModaSC_48pt-ExtraBold.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+
+@font-face {
+  font-family: 'ClashDisplay';
+  src: url('/fonts/ClashDisplay-Bold.woff2') format('woff2');
+  font-weight: 900; /* Peso Black */
+  font-style: normal;
+  font-display: swap; /* Clave para que cargue rápido */
+}
+
+@font-face {
+  font-family: 'ClashDisplaySEMI';
+  src: url('/fonts/ClashDisplay-SemiBold.woff2') format('woff2');
+  font-weight: 600; /* Peso SemiBold */
+  font-style: normal;
+  font-display: swap; /* Clave para que cargue rápido */
+}
+/* 2. Creamos una clase CSS específica */
+.fontGaleriaSemiBold {
+  font-family: 'ClashDisplaySEMI', sans-serif;
+  font-weight: 600; /* Peso SemiBold */
+}
+.FontGaleria {
+  font-family: 'ClashDisplay', sans-serif;
+}
+.font-especial {
+  font-family: 'MiFuenteEspecial', sans-serif;
+}
+
