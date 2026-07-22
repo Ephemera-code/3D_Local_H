@@ -61,7 +61,7 @@ export function Galeria() {
 
         <div className="flex flex-col gap-3 min-h-0">
           
-            <h1 className="text-[clamp(5.50rem,3vw,3rem)] FontGaleria uppercase flex items-center justify-center mb-4 tracking-widest text-white m-0 leading-none">
+            <h1 className="text-[clamp(5.50rem,3vw,3rem)] FontGaleria uppercase flex items-center justify-center  tracking-widest text-white m-0 leading-none">
           
           
                 {/* Contenedor relativo SOLO para la H y el ícono */}
@@ -85,10 +85,10 @@ export function Galeria() {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.3 }}
             >
-              <p className="font-black uppercase text-center tracking-wide text-white text-[15px] leading-snug mb-2">
+              <p className="font-black uppercase text-center tracking-wide text-white text-[13px] leading-snug mb-2">
                 {itemGrande.frase}
               </p>
-              <p className="font-mono text-center text-[14px] text-zinc-400 leading-relaxed">
+              <p className="font-mono text-center text-[12px] text-zinc-400 leading-relaxed">
                 {itemGrande.parrafo}
               </p>
             </motion.div>
