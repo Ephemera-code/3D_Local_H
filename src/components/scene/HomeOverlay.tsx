@@ -49,7 +49,7 @@ export function HomeOverlay({ visible }: HomeOverlayProps) {
             background: 'linear-gradient(135deg, rgba(255,69,0,0.6), rgba(245,158,11,0.15) 40%, rgba(39,39,42,0.4) 70%)'
           }}
         >
-          <div className="w-full h-full rounded-[11px] bg-zinc-950/95 backdrop-blur-md p-4 flex flex-col gap-3">
+          <div className="w-full h-full rounded-[11px] bg-zinc-950/95  p-4 flex flex-col gap-3">
 
             {/* Insignia de estado — le da la sensación de "vivo" que faltaba */}
             <div className="flex items-center justify-between">

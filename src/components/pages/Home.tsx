@@ -68,7 +68,7 @@ export function Home() {
                 startTransition(() => navigate('/galeria'))
               }}
               className="pointer-events-auto w-full py-4 flex items-center justify-center
-                bg-zinc-900/90 backdrop-blur-md border-t border-zinc-800/80
+                bg-zinc-900/90  border-t border-zinc-800/80
                 text-xs md:text-sm font-bold uppercase tracking-[0.2em] text-zinc-300
                 transition-colors duration-200 hover:text-white hover:bg-zinc-800/90 active:scale-[0.98]"
             >
