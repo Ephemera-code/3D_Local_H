@@ -11,3 +11,11 @@ createRoot(document.getElementById('root')!).render(
     </BrowserRouter>
   </StrictMode>,
 )
+
+// import { CameraDebugger } from './dev/CameraDebugger'
+
+// createRoot(document.getElementById('root')!).render(
+//  <StrictMode>
+//    <CameraDebugger />
+//  </StrictMode>,
+// )

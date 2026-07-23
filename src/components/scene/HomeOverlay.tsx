@@ -15,13 +15,13 @@ export function HomeOverlay({ visible }: HomeOverlayProps) {
     <>
       {/* Wordmark: chico, centrado arriba, no interfiere con el drag de la escena */}
       <div className="absolute top-20 left-1/2 -translate-x-1/2 z-40 pointer-events-none select-none">
-        <h1 className="text-[clamp(2.50rem,3vw,3rem)] font-especial uppercase flex items-center text-white m-0 leading-none">
+        <h1 className="text-[clamp(2.50rem,3vw,3rem)] fontGaleriaSemiBold uppercase flex items-center text-white m-0 leading-none">
           HAMBR
           
           {/* Contenedor relativo SOLO para la E y el ícono */}
-          <span className="relative font-especial inline-block">
+          <span className="relative font-especial mb-0.5 inline-block">
             {/* La E invertida */}
-            <span className="inline-block -scale-x-110">E</span>
+            <span className="inline-block ml-0.5 -scale-x-100">E</span>
             
             {/* El ícono */}
             <img

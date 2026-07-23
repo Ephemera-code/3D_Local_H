@@ -1,7 +1,7 @@
-import { useRef, startTransition } from 'react'
+import { startTransition } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { HomeOverlay } from '../../components/scene/HomeOverlay'
-import { useEscena } from '../../context/EscenaContext'
+import { HomeOverlay } from '@/components/scene/HomeOverlay'
+import { useEscena } from '@/context/EscenaContext'
 import { FOTOS } from '@/data/galeriaItems'
 
 // 🖼️ Precarga las fotos de la Galería en el caché del navegador ANTES de que
@@ -23,14 +23,13 @@ function precargarFotosGaleria() {
 
 export function Home() {
   const navigate = useNavigate()
-  const navegandoRef = useRef(false)
   const { seccion, manejarViajeCamara, modeloListo } = useEscena()
 
   return (
     // pointer-events-none en el contenedor para que los clicks/drag lleguen
     // al Canvas de Experiencia3D (que está debajo, fixed) salvo en los
     // elementos interactivos puntuales (pointer-events-auto en cada uno).
-    <div className="relative h-dvh w-full overflow-hidden pointer-events-none">
+    <div className="fixed inset-0 pointer-events-none">
       <HomeOverlay visible={seccion === 'home' && modeloListo} />
 
       {/* Contenedor inferior de acciones: barras full-width apiladas, como
@@ -58,8 +57,6 @@ export function Home() {
               onTouchStart={precargarFotosGaleria}
               onFocus={precargarFotosGaleria}
               onClick={() => {
-                if (navegandoRef.current) return
-                navegandoRef.current = true
                 // startTransition: le avisa a React que el trabajo de montar
                 // /galeria (relativamente pesado: carrusel, listeners) no es
                 // urgente, así el navegador puede pintar el primer frame del
@@ -67,8 +64,8 @@ export function Home() {
                 // arrancar la transición.
                 startTransition(() => navigate('/galeria'))
               }}
-              className="pointer-events-auto w-full py-4 flex items-center justify-center
-                bg-zinc-900/90  border-t border-zinc-800/80
+              className="pointer-events-auto w-full py-5 flex items-center justify-center
+                bg-zinc-900/90 backdrop-blur-md border-t border-zinc-800/80
                 text-xs md:text-sm font-bold uppercase tracking-[0.2em] text-zinc-300
                 transition-colors duration-200 hover:text-white hover:bg-zinc-800/90 active:scale-[0.98]"
             >

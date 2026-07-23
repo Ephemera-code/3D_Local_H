@@ -37,7 +37,7 @@ body {
 
 @font-face {
   font-family: 'ClashDisplaySEMI';
-  src: url('/fonts/ClashDisplay-SemiBold.woff2') format('woff2');
+  src: url('/fonts/ClashDisplay-Semibold.woff2') format('woff2');
   font-weight: 600; /* Peso SemiBold */
   font-style: normal;
   font-display: swap; /* Clave para que cargue rápido */

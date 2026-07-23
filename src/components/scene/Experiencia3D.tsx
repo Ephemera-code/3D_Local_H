@@ -3,7 +3,7 @@ import { Canvas, useThree } from '@react-three/fiber'
 import { Suspense, useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { RotatingShape } from './RotatingShape'
-import { useEscena, COORDENADAS, type Seccion } from '../../context/EscenaContext'
+import { useEscena, type Seccion } from '@/context/EscenaContext'
 import * as THREE from 'three'
 
 // 🖥️ Ajustamos el FOV (campo de visión) en vez de mover la cámara según el
@@ -11,7 +11,7 @@ import * as THREE from 'three'
 // dispositivo, solo cambia cuánto abarca la lente.
 const FOV_BASE = 75
 const ASPECT_REFERENCIA = 16 / 9
-const FOV_MAXIMO = 125
+const FOV_MAXIMO = 80
 
 function calcularFovVertical(aspect: number): number {
   if (aspect >= ASPECT_REFERENCIA) return FOV_BASE
@@ -71,13 +71,20 @@ function Loader({ listo }: { listo: boolean }) {
 }
 
 // 🎮 Aplica el FOV según el aspect (siempre) y fija posición/target salvo
-// durante un viaje en curso.
+// durante un viaje en curso. Las coordenadas vienen de un ref (no de un
+// import estático) porque ahora dependen de si el dispositivo es mobile o
+// desktop — ver EscenaContext.tsx.
 function ControladorCamara({
   controlsRef,
-  seccionRef
+  seccionRef,
+  coordenadasRef
 }: {
   controlsRef: React.MutableRefObject<any>
   seccionRef: React.MutableRefObject<Seccion>
+  coordenadasRef: React.MutableRefObject<{
+    home: { posicion: [number, number, number]; target: [number, number, number] }
+    ventana: { posicion: [number, number, number]; target: [number, number, number] }
+  }>
 }) {
   const { camera, size } = useThree()
 
@@ -90,7 +97,8 @@ function ControladorCamara({
 
     if (seccionRef.current === 'viajando') return
 
-    const destino = seccionRef.current === 'ventana' ? COORDENADAS.ventana : COORDENADAS.home
+    const destino =
+      seccionRef.current === 'ventana' ? coordenadasRef.current.ventana : coordenadasRef.current.home
 
     camera.position.set(...destino.posicion)
     if (controlsRef.current) {
@@ -99,7 +107,7 @@ function ControladorCamara({
     } else {
       camera.lookAt(...destino.target)
     }
-  }, [camera, controlsRef, size.width, size.height, seccionRef])
+  }, [camera, controlsRef, size.width, size.height, seccionRef, coordenadasRef])
 
   return null
 }
@@ -111,20 +119,18 @@ function ControladorCamara({
 // (esa recreación repetida era la causa real del "Context Lost").
 export function Experiencia3D() {
   const location = useLocation()
-  const { controlsRef, seccionRef, modeloListo, setModeloListo } = useEscena()
-  const visible = location.pathname === '/'
+  const { controlsRef, seccionRef, modeloListo, setModeloListo, coordenadasRef } = useEscena()
+  // El panel de Galería cubre toda la pantalla cuando está abierto, así que
+  // ya no hace falta desvanecer el Canvas con opacity — solo pausamos el
+  // render loop para no gastar GPU de más mientras no se ve.
+  const galeriaAbierta = location.pathname === '/galeria'
 
   return (
-    <div
-      className={`fixed inset-0 transition-opacity duration-300 ease-in-out ${
-        visible ? 'opacity-100' : 'opacity-0 pointer-events-none'
-      }`}
-      aria-hidden={!visible}
-    >
+    <div className="fixed inset-0" aria-hidden={galeriaAbierta}>
       <Loader listo={modeloListo} />
 
       <Canvas
-        frameloop={visible ? 'always' : 'never'}
+        frameloop={galeriaAbierta ? 'never' : 'always'}
         gl={{
           antialias: true,
           toneMapping: THREE.ACESFilmicToneMapping,
@@ -139,7 +145,7 @@ export function Experiencia3D() {
       >
         <color attach="background" args={['#000000']} />
 
-        <ControladorCamara controlsRef={controlsRef} seccionRef={seccionRef} />
+        <ControladorCamara controlsRef={controlsRef} seccionRef={seccionRef} coordenadasRef={coordenadasRef} />
 
         <Suspense fallback={null}>
           <RotatingShape onListo={() => setModeloListo(true)} />

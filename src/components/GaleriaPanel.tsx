@@ -1,39 +1,63 @@
 import { useEffect, useRef, useState, startTransition } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ITEMS } from '@/data/galeriaItems'
 
-// 🖼️ Los assets dentro de /public NO se importan como módulo de JS — Vite los
-// sirve directo desde la raíz del sitio. Por eso es un string, no un import.
 const LOGO_URL = '/logoH.png'
-
 const INTERVALO_LOOP_MS = 4000
 const REANUDAR_LOOP_MS = 8000
 
-export function Galeria() {
+// 🎠 Panel de Galería: en vez de ser una página que compite con Home por el
+// mismo espacio (dos elementos fixed animando por separado, con riesgo de
+// desincronía), este componente vive SIEMPRE montado como un panel que se
+// desliza encima. Nunca se desmonta después de abrirse la primera vez —
+// eso elimina el costo de remount y recálculo de estilos que causaba el
+// saltito, ya que la segunda vez en adelante solo estamos moviendo un
+// translateX sobre algo que ya existe en el DOM.
+export function GaleriaPanel() {
+  const location = useLocation()
   const navigate = useNavigate()
-  const [indiceSeleccionado, setIndiceSeleccionado] = useState(0)
+  const abierta = location.pathname === '/galeria'
+  const panelRef = useRef<HTMLDivElement>(null)
 
+  const [indiceSeleccionado, setIndiceSeleccionado] = useState(0)
   const pausadoRef = useRef(false)
   const timeoutReanudarRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const itemGrande = ITEMS[indiceSeleccionado]
 
-  // Loop automático de la foto principal
+  // El loop automático solo corre mientras el panel está abierto — evita
+  // gastar CPU/renders de más cuando el usuario ni lo está viendo.
   useEffect(() => {
+    if (!abierta) return
     const id = setInterval(() => {
       if (pausadoRef.current) return
       setIndiceSeleccionado((prev) => (prev + 1) % ITEMS.length)
     }, INTERVALO_LOOP_MS)
-    
     return () => clearInterval(id)
-  }, [])
+  }, [abierta])
 
   useEffect(() => {
     return () => {
       if (timeoutReanudarRef.current) clearTimeout(timeoutReanudarRef.current)
     }
   }, [])
+
+  // 🔒 Usamos 'inert' (atributo DOM nativo) en vez de aria-hidden para
+  // esconder el panel cuando está cerrado. A diferencia de aria-hidden,
+  // 'inert' saca automáticamente el foco y bloquea la interacción de TODO
+  // el subárbol — evita el warning "Blocked aria-hidden on an element
+  // because its descendant retained focus" que aparecía cuando el botón
+  // "Volver" quedaba con el foco justo al cerrarse el panel.
+  useEffect(() => {
+    const el = panelRef.current
+    if (!el) return
+    if (abierta) {
+      el.removeAttribute('inert')
+    } else {
+      el.setAttribute('inert', '')
+    }
+  }, [abierta])
 
   const seleccionarItem = (indiceReal: number) => {
     setIndiceSeleccionado(indiceReal)
@@ -45,7 +69,14 @@ export function Galeria() {
   }
 
   return (
-    <div className="relative h-dvh w-full overflow-hidden bg-zinc-950 flex flex-col">
+    <motion.div
+      ref={panelRef}
+      className="fixed inset-0 z-50 bg-zinc-950 flex flex-col overflow-hidden"
+      initial={false}
+      animate={{ x: abierta ? '0%' : '100%' }}
+      transition={{ duration: 0.5, ease: [0.65, 0, 0.35, 1] }}
+      style={{ pointerEvents: abierta ? 'auto' : 'none' }}
+    >
       <button
         onClick={() => startTransition(() => navigate('/'))}
         className="absolute top-6 left-6 z-40 rounded-xl bg-zinc-800 px-6 py-3 font-bold text-white shadow-lg transition-all hover:bg-zinc-700 active:scale-95"
@@ -60,23 +91,16 @@ export function Galeria() {
         </div>
 
         <div className="flex flex-col gap-3 min-h-0">
-          
-            <h1 className="text-[clamp(5.50rem,3vw,3rem)] FontGaleria uppercase flex items-center justify-center  tracking-widest text-white m-0 leading-none">
-          
-          
-                {/* Contenedor relativo SOLO para la H y el ícono */}
-                <span className="relative inline-block">
-                    <span className="inline-block">H</span>
-                    {/* El ícono */}
-                    <img
-                    src={LOGO_URL}
-                    alt="Fuego"
-                    // Usamos w-[0.8em] para que escale junto con el font-size.
-                    // -top y -right en porcentajes para que la posición también sea fluida.
-                    className="absolute -top-[50%] -right-[60%] w-[0.8em] h-[0.8em] rotate-45 object-contain"
-                    />
-                </span>
-            </h1>
+          <h1 className="text-[clamp(5.50rem,3vw,3rem)] FontGaleria uppercase flex items-center justify-center mb-4 tracking-widest text-white m-0 leading-none">
+            <span className="relative inline-block">
+              <span className="inline-block">H</span>
+              <img
+                src={LOGO_URL}
+                alt="Fuego"
+                className="absolute -top-[50%] -right-[60%] w-[0.8em] h-[0.8em] rotate-45 object-contain"
+              />
+            </span>
+          </h1>
           <AnimatePresence mode="wait">
             <motion.div
               key={itemGrande.id}
@@ -85,10 +109,10 @@ export function Galeria() {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.3 }}
             >
-              <p className="font-black uppercase text-center tracking-wide text-white text-[13px] leading-snug mb-2">
+              <p className="font-black uppercase text-center tracking-wide text-white text-[clamp(0.70rem,1.8dvh,0.95rem)] leading-snug mb-2">
                 {itemGrande.frase}
               </p>
-              <p className="font-mono text-center text-[12px] text-zinc-400 leading-relaxed">
+              <p className="font-mono text-center text-[clamp(0.7rem,1.5dvh,0.85rem)] text-zinc-400 leading-relaxed">
                 {itemGrande.parrafo}
               </p>
             </motion.div>
@@ -98,22 +122,19 @@ export function Galeria() {
 
       {/* CARRUSEL INFERIOR CON ANIMACIÓN CONTINUA (Marquesina) */}
       <div className="relative w-full overflow-hidden py-2 flex items-center">
-        {/* Degradados laterales para que se desvanezca suavemente en los bordes */}
         <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-zinc-950 to-transparent z-10 pointer-events-none" />
         <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-zinc-950 to-transparent z-10 pointer-events-none" />
 
         <motion.div
           className="flex gap-4 px-4 shrink-0"
-          animate={{ x: ['0%', '-50%'] }}
+          animate={abierta ? { x: ['0%', '-50%'] } : {}}
           transition={{
             repeat: Infinity,
             ease: 'linear',
-            duration: 15, // Velocidad del movimiento (bajalo si querés que vaya más rápido)
+            duration: 15
           }}
-          // Opcional: si querés que se detenga cuando le pasás el mouse por encima
           style={{ width: 'max-content' }}
         >
-          {/* Duplicamos el array ITEMS para crear el efecto de loop infinito perfecto */}
           {[...ITEMS, ...ITEMS].map((item, index) => {
             const indiceReal = index % ITEMS.length
             const estaActivo = indiceSeleccionado === indiceReal
@@ -123,8 +144,8 @@ export function Galeria() {
                 key={`${item.id}-${index}`}
                 onClick={() => seleccionarItem(indiceReal)}
                 className={`relative flex-none w-32 md:w-40 aspect-square rounded-2xl overflow-hidden transition-all duration-300 ${
-                  estaActivo 
-                    ? 'ring-2 ring-amber-500 scale-105 shadow-lg shadow-amber-500/30 opacity-100' 
+                  estaActivo
+                    ? 'ring-2 ring-amber-500 scale-105 shadow-lg shadow-amber-500/30 opacity-100'
                     : 'opacity-40 hover:opacity-80 scale-95'
                 }`}
               >
@@ -150,16 +171,10 @@ export function Galeria() {
           </motion.h2>
         </AnimatePresence>
       </div>
-    </div>
+    </motion.div>
   )
 }
 
-function FotoPlaceholder({
-  imagen,
-  itemId
-}: {
-  imagen: string
-  itemId: string
-}) {
-  return <img src={imagen} alt={itemId} className="w-full h-full object-cover" />
+function FotoPlaceholder({ imagen, itemId }: { imagen: string; itemId: string }) {
+  return <img src={imagen} alt={itemId} className="w-full h-full object-cover" loading="eager" />
 }

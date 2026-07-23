@@ -3,16 +3,61 @@ import gsap from 'gsap'
 
 export type Seccion = 'home' | 'ventana' | 'viajando'
 
+interface CoordSet {
+  posicion: [number, number, number]
+  target: [number, number, number]
+}
+
+interface ColeccionCoordenadas {
+  home: CoordSet
+  ventana: CoordSet
+}
+
+// 📱🖥️ Dos sets de coordenadas explícitos — uno por tipo de dispositivo. Se
+// elige automáticamente según el ancho de pantalla (ver useEsMobile más
+// abajo). Usá CameraDebugger.tsx en tu celu real para encontrar los valores
+// ideales de COORDENADAS_MOBILE.
+const BREAKPOINT_MOBILE = 768 // px — mismo criterio que el breakpoint 'md' de Tailwind
+
 // 📐 Tus coordenadas perfectas (pensadas para desktop / aspect ancho)
-export const COORDENADAS = {
+const COORDENADAS_DESKTOP: ColeccionCoordenadas = {
   home: {
-    posicion: [9.2, 2, 9] as [number, number, number],
-    target: [5.2, 0.01, -1.5] as [number, number, number]
+    posicion: [8.62, 2.90, 12.8],
+    target: [5.97, 0.80, -0.33]
   },
   ventana: {
-    posicion: [5, 1.25, -3.2] as [number, number, number],
-    target: [3.74, 1.17, -4.23] as [number, number, number]
+    posicion: [4.44, 1.22, -4.01],
+    target: [-5.27, -0.60, -5.42]
   }
+}
+
+// 🚧 TODO: reemplazar por los valores que encuentres con CameraDebugger.tsx
+// probando en un celular real — por ahora son un placeholder igual a desktop.
+const COORDENADAS_MOBILE: ColeccionCoordenadas = {
+  home: {
+    posicion: [12.68, 2.04, 24.23],
+    target: [4.35, -0.98, -0.65]
+  },
+  ventana: {
+    posicion: [7.45, 1.80, -3.56],
+    target: [-1.28, 1.33, -5.70]
+  }
+}
+
+// Detecta mobile/desktop por ancho de pantalla y reacciona a resize (por
+// ejemplo, si el usuario rota el celular o redimensiona la ventana).
+function useEsMobile(breakpoint = BREAKPOINT_MOBILE) {
+  const [esMobile, setEsMobile] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth < breakpoint : false
+  )
+
+  useEffect(() => {
+    const alRedimensionar = () => setEsMobile(window.innerWidth < breakpoint)
+    window.addEventListener('resize', alRedimensionar)
+    return () => window.removeEventListener('resize', alRedimensionar)
+  }, [breakpoint])
+
+  return esMobile
 }
 
 interface EscenaContextValue {
@@ -22,6 +67,9 @@ interface EscenaContextValue {
   modeloListo: boolean
   setModeloListo: (valor: boolean) => void
   manejarViajeCamara: (haciaDonde: 'home' | 'ventana') => void
+  // Ref (no state) para que Experiencia3D pueda leer el set de coordenadas
+  // vigente sin causar un re-render extra cada vez que cambia.
+  coordenadasRef: React.MutableRefObject<ColeccionCoordenadas>
 }
 
 const EscenaContext = createContext<EscenaContextValue | null>(null)
@@ -32,6 +80,15 @@ export function EscenaProvider({ children }: { children: ReactNode }) {
   const seccionRef = useRef<Seccion>(seccion)
   const tlRef = useRef<gsap.core.Timeline | null>(null)
   const [modeloListo, setModeloListo] = useState(false)
+
+  const esMobile = useEsMobile()
+  const coordenadasRef = useRef<ColeccionCoordenadas>(
+    esMobile ? COORDENADAS_MOBILE : COORDENADAS_DESKTOP
+  )
+
+  useEffect(() => {
+    coordenadasRef.current = esMobile ? COORDENADAS_MOBILE : COORDENADAS_DESKTOP
+  }, [esMobile])
 
   useEffect(() => {
     seccionRef.current = seccion
@@ -50,7 +107,7 @@ export function EscenaProvider({ children }: { children: ReactNode }) {
     const target = controlsRef.current.target
 
     setSeccion('viajando')
-    const destino = haciaDonde === 'ventana' ? COORDENADAS.ventana : COORDENADAS.home
+    const destino = coordenadasRef.current[haciaDonde]
 
     tlRef.current?.kill()
     const tl = gsap.timeline({
@@ -89,7 +146,15 @@ export function EscenaProvider({ children }: { children: ReactNode }) {
 
   return (
     <EscenaContext.Provider
-      value={{ controlsRef, seccion, seccionRef, modeloListo, setModeloListo, manejarViajeCamara }}
+      value={{
+        controlsRef,
+        seccion,
+        seccionRef,
+        modeloListo,
+        setModeloListo,
+        manejarViajeCamara,
+        coordenadasRef
+      }}
     >
       {children}
     </EscenaContext.Provider>
