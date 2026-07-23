@@ -1,4 +1,4 @@
-import type { ItemMenu } from '@/components/store/cart'
+import type { ItemMenu } from '@/store/cart'
 
 export interface Categoria {
   id: string
