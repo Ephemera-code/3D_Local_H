@@ -11,6 +11,9 @@ export function MenuPanel() {
 
   const [vista, setVista] = useState<'menu' | 'carrito'>('menu')
   const [categoriaActiva, setCategoriaActiva] = useState(CATEGORIAS[0].id)
+  
+  // Estado local para recordar el tamaño seleccionado en cada producto con variantes
+  const [tamanosSeleccionados, setTamanosSeleccionados] = useState<Record<string, '500ml' | '1 Litro'>>({})
 
   const { items, agregarItem, cambiarCantidad, quitarItem, total, cantidadTotal } = useCartStore()
 
@@ -110,38 +113,81 @@ export function MenuPanel() {
               })}
             </div>
 
-            {/* Lista de productos sin imágenes (Estilo carta) */}
+            {/* Lista de productos */}
             <div className="flex-1 overflow-y-auto px-5 pb-6 flex flex-col">
-              {itemsFiltrados.map((item) => (
-                <div
-                  key={item.id}
-                  className="py-5 border-b border-zinc-800/50 flex flex-col gap-1"
-                >
-                  <div className="flex justify-between items-start gap-4">
-                    <h3 className="font-black uppercase text-sm text-amber-500 tracking-wide">
-                      {item.nombre}
-                    </h3>
-                    <p className="font-bold text-sm text-white shrink-0">
-                      ${item.precio.toLocaleString('es-AR')}
-                    </p>
-                  </div>
-                  
-                  {item.descripcion && (
-                    <p className="text-sm text-zinc-400 leading-snug">
-                      ( {item.descripcion} )
-                    </p>
-                  )}
+              {itemsFiltrados.map((item) => {
+                const tienePrecios = item.precios && item.precios.length > 0
+                const tamanoActual = tienePrecios ? (tamanosSeleccionados[item.id] || item.precios![0].tamano) : null
+                const precioActual = tienePrecios 
+                  ? item.precios!.find(p => p.tamano === tamanoActual)?.precio || item.precios![0].precio 
+                  : (item.precio || 0)
 
-                  <div className="mt-3 flex">
-                    <button
-                      onClick={() => agregarItem(item)}
-                      className="rounded-lg bg-zinc-900 border border-amber-500/30 text-amber-500 px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-amber-500 hover:text-zinc-950 transition-colors"
-                    >
-                      + Agregar
-                    </button>
+                return (
+                  <div
+                    key={item.id}
+                    className="py-5 border-b border-zinc-800/50 flex flex-col gap-2"
+                  >
+                    <div className="flex justify-between items-start gap-4">
+                      <h3 className="font-black uppercase text-sm text-amber-500 tracking-wide">
+                        {item.nombre}
+                      </h3>
+                      <p className="font-bold text-sm text-white shrink-0">
+                        ${precioActual.toLocaleString('es-AR')}
+                      </p>
+                    </div>
+                    
+                    {item.descripcion && (
+                      <p className="text-sm text-zinc-400 leading-snug">
+                        ( {item.descripcion} )
+                      </p>
+                    )}
+
+                    {/* Selector de tamaños si el producto cuenta con variantes */}
+                    {tienePrecios && item.precios && (
+                      <div className="flex gap-2 mt-1">
+                        {item.precios.map((op) => (
+                          <button
+                            key={op.tamano}
+                            onClick={() => setTamanosSeleccionados(prev => ({ ...prev, [item.id]: op.tamano }))}
+                            className={`px-3 py-1 rounded-lg text-xs font-bold uppercase transition-colors ${
+                              tamanoActual === op.tamano
+                                ? 'bg-amber-500 text-zinc-950'
+                                : 'bg-zinc-900 text-zinc-400 hover:text-white'
+                            }`}
+                          >
+                            {op.tamano}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="mt-2 flex">
+                      <button
+                        onClick={() => {
+                          if (tienePrecios && tamanoActual) {
+                            agregarItem({
+                              id: `${item.id}-${tamanoActual}`,
+                              nombre: `${item.nombre} (${tamanoActual})`,
+                              precio: precioActual,
+                              categoria: item.categoria
+                            })
+                          } else {
+                            agregarItem({
+                              id: item.id,
+                              nombre: item.nombre,
+                              precio: item.precio || 0,
+                              categoria: item.categoria
+                            })
+                          }
+                        }}
+                        className="rounded-lg bg-zinc-900 border border-amber-500/30 text-amber-500 px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-amber-500 hover:text-zinc-950 transition-colors"
+                      >
+                        + Agregar
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
 
               {itemsFiltrados.length === 0 && (
                 <p className="text-center text-zinc-500 text-sm mt-8">No hay productos en esta categoría.</p>
@@ -149,7 +195,7 @@ export function MenuPanel() {
             </div>
           </>
         ) : (
-          /* Vista Carrito / Resumen del pedido (Full width) */
+          /* Vista Carrito / Resumen del pedido */
           <div className="flex-1 flex flex-col min-h-0 bg-zinc-950">
             <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4">
               {items.length === 0 && (
@@ -200,7 +246,7 @@ export function MenuPanel() {
               ))}
             </div>
 
-            {/* Total y Botón Pagar (Fijo abajo) */}
+            {/* Total y Botón Pagar */}
             <div className="px-5 py-6 bg-zinc-900/40 border-t border-zinc-800/80">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-zinc-400 uppercase text-xs font-mono tracking-wider">Total</span>
