@@ -7,13 +7,6 @@ const LOGO_URL = '/logoH.png'
 const INTERVALO_LOOP_MS = 4000
 const REANUDAR_LOOP_MS = 8000
 
-// 🎠 Panel de Galería: en vez de ser una página que compite con Home por el
-// mismo espacio (dos elementos fixed animando por separado, con riesgo de
-// desincronía), este componente vive SIEMPRE montado como un panel que se
-// desliza encima. Nunca se desmonta después de abrirse la primera vez —
-// eso elimina el costo de remount y recálculo de estilos que causaba el
-// saltito, ya que la segunda vez en adelante solo estamos moviendo un
-// translateX sobre algo que ya existe en el DOM.
 export function GaleriaPanel() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -26,8 +19,6 @@ export function GaleriaPanel() {
 
   const itemGrande = ITEMS[indiceSeleccionado]
 
-  // El loop automático solo corre mientras el panel está abierto — evita
-  // gastar CPU/renders de más cuando el usuario ni lo está viendo.
   useEffect(() => {
     if (!abierta) return
     const id = setInterval(() => {
@@ -43,12 +34,6 @@ export function GaleriaPanel() {
     }
   }, [])
 
-  // 🔒 Usamos 'inert' (atributo DOM nativo) en vez de aria-hidden para
-  // esconder el panel cuando está cerrado. A diferencia de aria-hidden,
-  // 'inert' saca automáticamente el foco y bloquea la interacción de TODO
-  // el subárbol — evita el warning "Blocked aria-hidden on an element
-  // because its descendant retained focus" que aparecía cuando el botón
-  // "Volver" quedaba con el foco justo al cerrarse el panel.
   useEffect(() => {
     const el = panelRef.current
     if (!el) return
@@ -71,7 +56,7 @@ export function GaleriaPanel() {
   return (
     <motion.div
       ref={panelRef}
-      className="fixed inset-0 z-50 bg-zinc-950 flex flex-col overflow-hidden"
+      className="fixed inset-0 z-50 bg-zinc-950 flex flex-col overflow-hidden transform-gpu will-change-transform"
       initial={false}
       animate={{ x: abierta ? '0%' : '100%' }}
       transition={{ duration: 0.5, ease: [0.65, 0, 0.35, 1] }}

@@ -1,14 +1,11 @@
 import { OrbitControls, useProgress } from '@react-three/drei'
 import { Canvas, useThree } from '@react-three/fiber'
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { RotatingShape } from './RotatingShape'
 import { useEscena, type Seccion } from '@/context/EscenaContext'
 import * as THREE from 'three'
 
-// 🖥️ Ajustamos el FOV (campo de visión) en vez de mover la cámara según el
-// aspect — así la posición y el target quedan SIEMPRE idénticos en cualquier
-// dispositivo, solo cambia cuánto abarca la lente.
 const FOV_BASE = 75
 const ASPECT_REFERENCIA = 16 / 9
 const FOV_MAXIMO = 80
@@ -23,9 +20,6 @@ function calcularFovVertical(aspect: number): number {
   return Math.min(THREE.MathUtils.radToDeg(vFovNuevo), FOV_MAXIMO)
 }
 
-// ⏳ Loader — se esconde recién cuando RotatingShape avisa (vía onListo) que
-// terminó de compilar shaders y subir texturas a la GPU (no solo cuando
-// terminó de descargar los archivos).
 function Loader({ listo }: { listo: boolean }) {
   const { progress } = useProgress()
   const [visible, setVisible] = useState(true)
@@ -70,10 +64,6 @@ function Loader({ listo }: { listo: boolean }) {
   )
 }
 
-// 🎮 Aplica el FOV según el aspect (siempre) y fija posición/target salvo
-// durante un viaje en curso. Las coordenadas vienen de un ref (no de un
-// import estático) porque ahora dependen de si el dispositivo es mobile o
-// desktop — ver EscenaContext.tsx.
 function ControladorCamara({
   controlsRef,
   seccionRef,
@@ -112,24 +102,19 @@ function ControladorCamara({
   return null
 }
 
-// 🖼️ El Canvas persiste montado SIEMPRE — nunca se destruye al navegar entre
-// rutas. Solo se muestra/oculta con opacidad + se pausa el render loop
-// (frameloop="never") cuando no corresponde verlo, evitando gastar GPU y,
-// sobre todo, evitando crear/destruir el contexto WebGL en cada navegación
-// (esa recreación repetida era la causa real del "Context Lost").
 export function Experiencia3D() {
   const location = useLocation()
   const { controlsRef, seccionRef, modeloListo, setModeloListo, coordenadasRef } = useEscena()
-  // El panel de Galería cubre toda la pantalla cuando está abierto, así que
-  // ya no hace falta desvanecer el Canvas con opacity — solo pausamos el
-  // render loop para no gastar GPU de más mientras no se ve.
+  
   const galeriaAbierta = location.pathname === '/galeria'
+  const manejarModeloListo = useCallback(() => setModeloListo(true), [setModeloListo])
 
   return (
     <div className="fixed inset-0" aria-hidden={galeriaAbierta}>
       <Loader listo={modeloListo} />
 
       <Canvas
+        dpr={[1, 2]}
         frameloop={galeriaAbierta ? 'never' : 'always'}
         gl={{
           antialias: true,
@@ -144,11 +129,10 @@ export function Experiencia3D() {
         }}
       >
         <color attach="background" args={['#000000']} />
-
         <ControladorCamara controlsRef={controlsRef} seccionRef={seccionRef} coordenadasRef={coordenadasRef} />
-
+        
         <Suspense fallback={null}>
-          <RotatingShape onListo={() => setModeloListo(true)} />
+          <RotatingShape onListo={manejarModeloListo} />
         </Suspense>
 
         <OrbitControls ref={controlsRef} makeDefault enabled={false} />

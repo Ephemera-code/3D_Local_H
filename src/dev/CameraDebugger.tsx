@@ -3,24 +3,12 @@ import { OrbitControls } from '@react-three/drei'
 import { Suspense, useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { RotatingShape } from '../components/scene/RotatingShape'
+import { EscenaProvider } from '@/context/EscenaContext' // 👈 Importamos el provider para que RotatingShape no falle
 
-// 📸 Herramienta de calibración de cámara — montala temporalmente (ver
-// instrucciones al final del archivo) cuando necesites encontrar nuevas
-// coordenadas para COORDENADAS.home / COORDENADAS.ventana en EscenaContext.
-//
-// Controles: click+arrastrar = orbitar · click derecho+arrastrar = pan ·
-// scroll = zoom. Cuando encuentres el encuadre que te gusta, tocá el botón:
-// loguea la posición de cámara + el target en la consola, YA formateados en
-// la sintaxis que usa COORDENADAS, y los copia al portapapeles.
 export function CameraDebugger() {
   const controlsRef = useRef<any>(null)
   const [copiado, setCopiado] = useState(false)
 
-  // 🖱️➡️⌨️ Alternativa robusta al pan con click derecho: mantené Shift y
-  // arrastrá con el click IZQUIERDO. Esto evita depender del botón derecho
-  // del mouse, que a veces es interceptado antes de llegar al navegador por
-  // drivers de mouse (gamer, utilidades de Windows) o extensiones — en esos
-  // casos ni siquiera se ve el menú contextual, porque el evento nunca llega.
   useEffect(() => {
     const alPresionar = (e: KeyboardEvent) => {
       if (e.key !== 'Shift' || !controlsRef.current) return
@@ -78,39 +66,36 @@ export function CameraDebugger() {
         Scroll: zoom
       </div>
 
-      <Canvas
-        camera={{ position: [9, 2, 9], fov: 80 }}
-        gl={{
-          antialias: true,
-          toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.5
-        }}
-      >
-        <color attach="background" args={['#000000']} />
-
-        {/* Ayudas visuales de referencia — el origen y una grilla en el suelo
-            son muy útiles para ubicarte mientras orbitás */}
-        <axesHelper args={[5]} />
-        <gridHelper args={[30, 30, '#333333', '#1a1a1a']} />
-
-        <Suspense fallback={null}>
-          <RotatingShape />
-        </Suspense>
-
-        {/* enabled (sin la prop en false) = control TOTAL, a diferencia del
-            uso en producción donde va enabled={false}. mouseButtons explícito
-            para que el remapeo dinámico de Shift (más arriba) tenga un
-            estado base claro sobre el cual alternar. */}
-        <OrbitControls
-          ref={controlsRef}
-          makeDefault
-          mouseButtons={{
-            LEFT: THREE.MOUSE.ROTATE,
-            MIDDLE: THREE.MOUSE.DOLLY,
-            RIGHT: THREE.MOUSE.PAN
+      {/* 🛡️ Envolvemos todo dentro del EscenaProvider para que RotatingShape no falle al buscar su contexto */}
+      <EscenaProvider>
+        <Canvas
+          camera={{ position: [9, 2, 9], fov: 80 }}
+          gl={{
+            antialias: true,
+            toneMapping: THREE.ACESFilmicToneMapping,
+            toneMappingExposure: 1.5
           }}
-        />
-      </Canvas>
+        >
+          <color attach="background" args={['#000000']} />
+
+          <axesHelper args={[5]} />
+          <gridHelper args={[30, 30, '#333333', '#1a1a1a']} />
+
+          <Suspense fallback={null}>
+            <RotatingShape />
+          </Suspense>
+
+          <OrbitControls
+            ref={controlsRef}
+            makeDefault
+            mouseButtons={{
+              LEFT: THREE.MOUSE.ROTATE,
+              MIDDLE: THREE.MOUSE.DOLLY,
+              RIGHT: THREE.MOUSE.PAN
+            }}
+          />
+        </Canvas>
+      </EscenaProvider>
     </div>
   )
 }
