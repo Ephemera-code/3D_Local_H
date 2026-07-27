@@ -49,7 +49,7 @@ export function HomeOverlay({ visible }: HomeOverlayProps) {
             background: 'linear-gradient(135deg, rgba(255,69,0,0.6), rgba(245,158,11,0.15) 40%, rgba(39,39,42,0.4) 70%)'
           }}
         >
-          <div className="w-full h-full rounded-[11px] bg-zinc-950/95  p-4 flex flex-col gap-3">
+          <div className="w-full h-full rounded-[11px] bg-zinc-950/95  p-2 flex flex-col gap-2">
 
             {/* Insignia de estado — le da la sensación de "vivo" que faltaba */}
             <div className="flex items-center justify-between">
@@ -78,15 +78,16 @@ export function HomeOverlay({ visible }: HomeOverlayProps) {
                 <svg className="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span>Mié a Dom: 20:00 - 00:00 hs</span>
+                <span>Lun a Dom: 20:00 - 00:00 hs</span>
               </div>
               <div className="flex items-center gap-2 text-zinc-300 text-xs font-mono">
                 <svg className="w-3.5 h-3.5 text-[#ff4500] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <span>Garín, Buenos Aires</span>
+                <span>Benavidez, Buenos Aires</span>
               </div>
+              <span className='ml-5 text-zinc-300 text-xs font-mono'> A.Perna 1630 Benavidez</span>
             </div>
 
             {/* Redes Sociales y Acciones */}
