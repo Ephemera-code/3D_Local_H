@@ -43,7 +43,11 @@ export const handler: Handler = async (event) => {
   }
 
   const texto = mensaje.text.trim().toLowerCase()
-  const store = getStore('config')
+  const store = getStore({
+    name: 'config',
+    siteID: process.env.NETLIFY_SITE_ID!,
+    token: process.env.NETLIFY_BLOBS_TOKEN!
+  })
 
   if (texto === 'abrir' || texto === '/abrir') {
     await store.setJSON('abierto', true)
