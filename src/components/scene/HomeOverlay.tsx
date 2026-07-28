@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { siInstagram, siWhatsapp } from 'simple-icons'
 
 // 🖼️ Los assets dentro de /public NO se importan como módulo de JS (Vite no
@@ -9,6 +10,31 @@ interface HomeOverlayProps {
 }
 
 export function HomeOverlay({ visible }: HomeOverlayProps) {
+  // 🟢🔴 Estado real de abierto/cerrado, controlado por vos desde el bot de
+  // Telegram. null = todavía no llegó la respuesta (mostramos algo neutro
+  // mientras carga, para no afirmar "abierto" antes de saberlo con certeza).
+  const [abierto, setAbierto] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    let cancelado = false
+
+    fetch('/.netlify/functions/estado')
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelado) setAbierto(data.abierto)
+      })
+      .catch(() => {
+        // Si falla la consulta (sin internet, función caída, etc.), no
+        // dejamos el badge colgado — asumimos "abierto" como fallback
+        // seguro para no espantar clientes por un problema técnico nuestro.
+        if (!cancelado) setAbierto(true)
+      })
+
+    return () => {
+      cancelado = true
+    }
+  }, [])
+
   if (!visible) return null
 
   return (
@@ -51,15 +77,25 @@ export function HomeOverlay({ visible }: HomeOverlayProps) {
         >
           <div className="w-full h-full rounded-[11px] bg-zinc-950/95  p-2 flex flex-col gap-2">
 
-            {/* Insignia de estado — le da la sensación de "vivo" que faltaba */}
+            {/* Insignia de estado — ahora conectada al estado real */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  {abierto && (
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  )}
+                  <span
+                    className={`relative inline-flex rounded-full h-2 w-2 ${
+                      abierto === null ? 'bg-zinc-600' : abierto ? 'bg-emerald-500' : 'bg-red-500'
+                    }`}
+                  ></span>
                 </span>
-                <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-400">
-                  Abierto ahora
+                <span
+                  className={`text-[10px] font-mono uppercase tracking-widest ${
+                    abierto === null ? 'text-zinc-500' : abierto ? 'text-emerald-400' : 'text-red-400'
+                  }`}
+                >
+                  {abierto === null ? 'Cargando...' : abierto ? 'Abierto ahora' : 'Cerrado ahora'}
                 </span>
               </div>
               <img src={LOGO_URL} alt="" className="w-4 h-4 object-contain opacity-80" />
