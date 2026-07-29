@@ -59,7 +59,7 @@ export function HomeOverlay({ visible }: HomeOverlayProps) {
         </h1>
       </div>
 
-      {/* Ticket de mostrador: horario + redes.
+      {/* Ticket de mostrador: horario + redes..
           Envuelto en un wrapper con gradiente para simular un borde "iluminado"
           (padding trick: el gradiente vive en el fondo del wrapper, y la
           tarjeta interna con el fondo oscuro real deja ver solo 1px de ese
