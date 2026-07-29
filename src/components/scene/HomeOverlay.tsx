@@ -18,7 +18,7 @@ export function HomeOverlay({ visible }: HomeOverlayProps) {
   useEffect(() => {
     let cancelado = false
 
-    fetch('/.netlify/functions/estado')
+    fetch('/api/estado')
       .then((res) => res.json())
       .then((data) => {
         if (!cancelado) setAbierto(data.abierto)
