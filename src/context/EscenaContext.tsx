@@ -64,6 +64,11 @@ interface EscenaContextValue {
   setModeloListo: (valor: boolean) => void
   manejarViajeCamara: (haciaDonde: 'home' | 'ventana') => void
   coordenadasRef: React.MutableRefObject<ColeccionCoordenadas>
+  // 🧭 Hacia dónde va el viaje actual — permite distinguir "Yendo al
+  // mostrador..." (entrando) de "Saliendo..." (volviendo a home) mientras
+  // seccion === 'viajando', que por sí solo no alcanza para saber la
+  // dirección.
+  direccionViaje: 'entrando' | 'saliendo' | null
 }
 
 const EscenaContext = createContext<EscenaContextValue | null>(null)
@@ -75,6 +80,7 @@ export function EscenaProvider({ children }: { children: ReactNode }) {
   const seccionRef = useRef<Seccion>(seccion)
   const tlRef = useRef<gsap.core.Timeline | null>(null)
   const [modeloListo, setModeloListo] = useState(false)
+  const [direccionViaje, setDireccionViaje] = useState<'entrando' | 'saliendo' | null>(null)
 
   const esMobile = useEsMobile()
   const coordenadasRef = useRef<ColeccionCoordenadas>(
@@ -131,8 +137,11 @@ export function EscenaProvider({ children }: { children: ReactNode }) {
     const controls = controlsRef.current
     const camera = controls.object as THREE.PerspectiveCamera
 
+    const estaEntrando = haciaDonde === 'ventana'
+
     setSeccion('viajando')
     seccionRef.current = 'viajando'
+    setDireccionViaje(estaEntrando ? 'entrando' : 'saliendo')
 
     tlRef.current?.kill()
     
@@ -141,7 +150,6 @@ export function EscenaProvider({ children }: { children: ReactNode }) {
 
     const coordenadas = coordenadasRef.current
     const destino = coordenadas[haciaDonde]
-    const estaEntrando = haciaDonde === 'ventana'
 
     const posInicial = camera.position.clone()
     const posFinal = new THREE.Vector3(...destino.posicion)
@@ -166,6 +174,7 @@ export function EscenaProvider({ children }: { children: ReactNode }) {
       onComplete: () => {
         setSeccion(haciaDonde)
         seccionRef.current = haciaDonde
+        setDireccionViaje(null)
         controls.target.copy(targetFinal)
         controls.update()
         // ❌ Eliminado: controls.enabled = true (Ya no dejamos que el usuario tome el control)
@@ -283,7 +292,8 @@ export function EscenaProvider({ children }: { children: ReactNode }) {
         modeloListo,
         setModeloListo,
         manejarViajeCamara,
-        coordenadasRef
+        coordenadasRef,
+        direccionViaje
       }}
     >
       {children}

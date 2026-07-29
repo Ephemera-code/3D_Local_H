@@ -66,7 +66,7 @@ export function HomeOverlay({ visible }: HomeOverlayProps) {
           gradiente como borde). Sumamos un glow cálido y una insignia de
           estado para que se sienta "vivo", no plano. */}
       <div
-        className="absolute bottom-[20dvh] left-2 z-40 -rotate-1 select-none pointer-events-auto"
+        className="absolute bottom-[20dvh] left-2 z-40  select-none pointer-events-auto"
         aria-label="Horario y redes"
       >
         <div

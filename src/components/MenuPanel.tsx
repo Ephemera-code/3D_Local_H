@@ -11,13 +11,22 @@ export function MenuPanel() {
 
   const [vista, setVista] = useState<'menu' | 'carrito'>('menu')
   const [categoriaActiva, setCategoriaActiva] = useState(CATEGORIAS[0].id)
-  
+
   // Estado local para recordar el tamaño seleccionado en cada producto con variantes
   const [tamanosSeleccionados, setTamanosSeleccionados] = useState<Record<string, '500ml' | '1 Litro'>>({})
+
+  // 🚚 Datos de entrega: retiro en el local (default) o con envío, en cuyo
+  // caso pedimos nombre y dirección antes de poder mandar el pedido.
+  const [tipoEntrega, setTipoEntrega] = useState<'retiro' | 'envio'>('retiro')
+  const [nombreCliente, setNombreCliente] = useState('')
+  const [direccionCliente, setDireccionCliente] = useState('')
 
   const { items, agregarItem, cambiarCantidad, quitarItem, total, cantidadTotal } = useCartStore()
 
   const itemsFiltrados = MENU_ITEMS.filter((item) => item.categoria === categoriaActiva)
+
+  const faltanDatosDeEnvio =
+    tipoEntrega === 'envio' && (!nombreCliente.trim() || !direccionCliente.trim())
 
   useEffect(() => {
     const el = panelRef.current
@@ -26,13 +35,19 @@ export function MenuPanel() {
       el.removeAttribute('inert')
     } else {
       el.setAttribute('inert', '')
-      setTimeout(() => setVista('menu'), 500) 
+      setTimeout(() => setVista('menu'), 500)
     }
   }, [abierta])
 
   const handleEnviarPedido = () => {
     if (items.length === 0) return
-    enviarPedidoPorWhatsapp(items, total())
+    if (faltanDatosDeEnvio) return
+
+    enviarPedidoPorWhatsapp(items, total(), {
+      tipo: tipoEntrega,
+      nombre: tipoEntrega === 'envio' ? nombreCliente.trim() : undefined,
+      direccion: tipoEntrega === 'envio' ? direccionCliente.trim() : undefined
+    })
   }
 
   return (
@@ -78,7 +93,7 @@ export function MenuPanel() {
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
-            Mi Pedido 
+            Mi Pedido
             {cantidadTotal() > 0 && (
               <span className={`px-2 py-0.5 rounded-full text-[10px] ${vista === 'carrito' ? 'bg-zinc-950 text-amber-500' : 'bg-amber-500 text-zinc-950'}`}>
                 {cantidadTotal()}
@@ -90,7 +105,7 @@ export function MenuPanel() {
 
       {/* Contenedor dinámico según la vista activa */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        
+
         {vista === 'menu' ? (
           <>
             {/* Tabs de categoría horizontales */}
@@ -118,8 +133,8 @@ export function MenuPanel() {
               {itemsFiltrados.map((item) => {
                 const tienePrecios = item.precios && item.precios.length > 0
                 const tamanoActual = tienePrecios ? (tamanosSeleccionados[item.id] || item.precios![0].tamano) : null
-                const precioActual = tienePrecios 
-                  ? item.precios!.find(p => p.tamano === tamanoActual)?.precio || item.precios![0].precio 
+                const precioActual = tienePrecios
+                  ? item.precios!.find(p => p.tamano === tamanoActual)?.precio || item.precios![0].precio
                   : (item.precio || 0)
 
                 return (
@@ -135,7 +150,7 @@ export function MenuPanel() {
                         ${precioActual.toLocaleString('es-AR')}
                       </p>
                     </div>
-                    
+
                     {item.descripcion && (
                       <p className="text-sm text-zinc-400 leading-snug">
                         ( {item.descripcion} )
@@ -204,7 +219,7 @@ export function MenuPanel() {
                   <p className="text-center text-zinc-400 text-sm">
                     Tu carrito está vacío.<br/>Agregá productos desde el menú.
                   </p>
-                  <button 
+                  <button
                     onClick={() => setVista('menu')}
                     className="mt-6 text-amber-500 text-xs uppercase tracking-widest font-bold underline"
                   >
@@ -244,6 +259,72 @@ export function MenuPanel() {
                   </button>
                 </div>
               ))}
+
+              {/* 🚚 Formulario de entrega — solo tiene sentido si ya hay algo
+                  en el carrito. "Retiro" no pide nada más; "Con envío" pide
+                  nombre y dirección, obligatorios antes de poder enviar. */}
+              {items.length > 0 && (
+                <div className="mt-2 flex flex-col gap-3">
+                  <span className="text-xs font-mono uppercase tracking-widest text-zinc-400">
+                    ¿Cómo lo recibís?
+                  </span>
+
+                  <div className="flex rounded-xl bg-zinc-900/60 p-1">
+                    <button
+                      onClick={() => setTipoEntrega('retiro')}
+                      className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors ${
+                        tipoEntrega === 'retiro'
+                          ? 'bg-gradient-to-r from-[#ff4500] to-amber-400 text-zinc-950'
+                          : 'text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      Sin envío
+                    </button>
+                    <button
+                      onClick={() => setTipoEntrega('envio')}
+                      className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors ${
+                        tipoEntrega === 'envio'
+                          ? 'bg-gradient-to-r from-[#ff4500] to-amber-400 text-zinc-950'
+                          : 'text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      Con envío
+                    </button>
+                  </div>
+
+                  {tipoEntrega === 'envio' && (
+                    <div className="flex flex-col gap-3 pt-1">
+                      <div className="flex flex-col gap-1.5">
+                        <label htmlFor="nombreCliente" className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">
+                          Nombre
+                        </label>
+                        <input
+                          id="nombreCliente"
+                          type="text"
+                          value={nombreCliente}
+                          onChange={(e) => setNombreCliente(e.target.value)}
+                          placeholder="Tu nombre"
+                          className="rounded-lg bg-zinc-900 border border-zinc-800 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 outline-none focus:border-amber-500/60 transition-colors"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <label htmlFor="direccionCliente" className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">
+                          Dirección
+                        </label>
+                        <input
+                          id="direccionCliente"
+                          type="text"
+                          value={direccionCliente}
+                          onChange={(e) => setDireccionCliente(e.target.value)}
+                          placeholder="Calle, número, localidad"
+                          className="rounded-lg bg-zinc-900 border border-zinc-800 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 outline-none focus:border-amber-500/60 transition-colors"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Total y Botón Pagar */}
@@ -255,7 +336,7 @@ export function MenuPanel() {
 
               <button
                 onClick={handleEnviarPedido}
-                disabled={items.length === 0}
+                disabled={items.length === 0 || faltanDatosDeEnvio}
                 className="w-full py-4 rounded-xl flex items-center justify-center
                   bg-gradient-to-r from-[#ff4500] to-amber-400
                   text-sm font-black uppercase tracking-[0.15em] text-zinc-950
@@ -264,6 +345,12 @@ export function MenuPanel() {
               >
                 Enviar pedido
               </button>
+
+              {faltanDatosDeEnvio && (
+                <p className="text-center text-red-400 text-[11px] font-mono mt-2">
+                  Completá nombre y dirección para el envío
+                </p>
+              )}
             </div>
           </div>
         )}

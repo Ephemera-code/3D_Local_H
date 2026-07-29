@@ -23,7 +23,7 @@ function precargarFotosGaleria() {
 
 export function Home() {
   const navigate = useNavigate()
-  const { seccion, manejarViajeCamara, modeloListo } = useEscena()
+  const { seccion, manejarViajeCamara, modeloListo, direccionViaje } = useEscena()
 
   return (
     // pointer-events-none en el contenedor para que los clicks/drag lleguen
@@ -88,14 +88,14 @@ export function Home() {
           </button>
         )}
 
-        {/* ESTADO: VIAJANDO */}
+        {/* ESTADO: VIAJANDO — el texto cambia según hacia dónde se viaja */}
         {seccion === 'viajando' && (
           <span
             className="pointer-events-auto w-full py-5 flex items-center justify-center
               bg-zinc-900/70 backdrop-blur-md border-t border-zinc-800/80
               text-xs font-bold uppercase tracking-[0.25em] text-zinc-400 animate-pulse"
           >
-            Yendo al mostrador...
+            {direccionViaje === 'saliendo' ? 'Saliendo...' : 'Yendo al mostrador...'}
           </span>
         )}
       </div>
