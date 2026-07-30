@@ -19,7 +19,13 @@ async function obtenerJsonBlob(nombreArchivo: string, defaultValue: any) {
   try {
     const fileInfo = await head(nombreArchivo).catch(() => null)
     if (!fileInfo) return defaultValue
-    const res = await fetch(fileInfo.url)
+    
+    // Leemos el blob privado usando el token de autorización
+    const res = await fetch(fileInfo.url, {
+      headers: {
+        authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`
+      }
+    })
     return await res.json()
   } catch {
     return defaultValue
@@ -28,7 +34,7 @@ async function obtenerJsonBlob(nombreArchivo: string, defaultValue: any) {
 
 async function guardarJsonBlob(nombreArchivo: string, data: any) {
   await put(nombreArchivo, JSON.stringify(data), {
-    access: 'public',
+    access: 'private',
     addRandomSuffix: false,
     allowOverwrite: true
   })
@@ -54,7 +60,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const texto = mensaje.text.trim()
   const textoMin = texto.toLowerCase()
 
-  // Control de Abrir / Cerrar
   if (textoMin === 'abrir' || textoMin === '/abrir') {
     await guardarJsonBlob('estado.json', { abierto: true })
     await responderTelegram(chatId, '✅ Local marcado como *ABIERTO*.')
@@ -67,7 +72,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ ok: true })
   }
 
-  // Manejo del Menú
   const spaceIdx = texto.indexOf(" ")
   const command = (spaceIdx !== -1 ? texto.substring(0, spaceIdx) : texto).toLowerCase()
   const argsRaw = spaceIdx !== -1 ? texto.substring(spaceIdx + 1).trim() : ""
