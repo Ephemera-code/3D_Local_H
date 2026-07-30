@@ -17,12 +17,9 @@ async function responderTelegram(chatId: number, texto: string) {
 
 async function obtenerJsonBlob(nombreArchivo: string, defaultValue: any) {
   try {
-    const { blobs } = await list({ prefix: nombreArchivo })
-    if (!blobs || blobs.length === 0) return defaultValue
-
-    const res = await fetch(blobs[0].url)
+    const fileInfo = await head(nombreArchivo)
+    const res = await fetch(fileInfo.url)
     if (!res.ok) return defaultValue
-
     return await res.json()
   } catch {
     return defaultValue

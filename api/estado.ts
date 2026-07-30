@@ -1,20 +1,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { put, list } from '@vercel/blob'
+import { head, put } from '@vercel/blob'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Manejo de lectura (GET) del estado del local
   if (req.method === 'GET') {
     try {
-      // Listamos los archivos para encontrar el de estado
-      const { blobs } = await list({ prefix: 'estado.json' })
+      // Usamos head directamente buscando 'estado.json'
+      const details = await head('estado.json')
       
-      if (!blobs || blobs.length === 0) {
-        return res.status(200).json({ abierto: true })
-      }
-
-      // Descargamos el contenido usando la URL con el token integrado que provee Vercel Blob
-      const response = await fetch(blobs[0].url)
-      
+      // Descargamos el contenido usando la url firmada que provee head()
+      const response = await fetch(details.url)
       if (!response.ok) {
         return res.status(200).json({ abierto: true })
       }
@@ -22,12 +16,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const data = await response.json()
       return res.status(200).json({ abierto: data.abierto })
     } catch (error) {
-      console.error('Error leyendo estado:', error)
+      // Si el archivo no existe todavía, devolvemos true por defecto
       return res.status(200).json({ abierto: true })
     }
   }
 
-  // Manejo de escritura (POST)
   if (req.method === 'POST') {
     try {
       const { abierto } = req.body
@@ -38,7 +31,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
       return res.status(200).json({ success: true, abierto })
     } catch (error) {
-      console.error('Error guardando estado:', error)
       return res.status(500).json({ error: 'No se pudo actualizar el estado' })
     }
   }
