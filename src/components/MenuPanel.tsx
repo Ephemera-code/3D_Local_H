@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useEscena } from '@/context/EscenaContext'
 import { useCartStore } from '@/store/cart'
-import { CATEGORIAS, MENU_ITEMS } from '@/data/menuItems'
+// ⚠️ Solo importamos CATEGORIAS, los MENU_ITEMS ahora vienen de Turso
+import { CATEGORIAS } from '@/data/menuItems'
 import { enviarPedidoPorWhatsapp } from '@/utils/whatsapp'
 
 export function MenuPanel() {
@@ -10,20 +11,45 @@ export function MenuPanel() {
   const panelRef = useRef<HTMLDivElement>(null)
 
   const [vista, setVista] = useState<'menu' | 'carrito'>('menu')
-  const [categoriaActiva, setCategoriaActiva] = useState(CATEGORIAS[0].id)
+  const [categoriaActiva, setCategoriaActiva] = useState(CATEGORIAS[0]?.id || '')
+
+  // 🔄 NUEVOS ESTADOS PARA LOS PRODUCTOS
+  const [menuItems, setMenuItems] = useState<any[]>([])
+  const [cargando, setCargando] = useState(true)
 
   // Estado local para recordar el tamaño seleccionado en cada producto con variantes
   const [tamanosSeleccionados, setTamanosSeleccionados] = useState<Record<string, '500ml' | '1 Litro'>>({})
 
-  // 🚚 Datos de entrega: retiro en el local (default) o con envío, en cuyo
-  // caso pedimos nombre y dirección antes de poder mandar el pedido.
+  // 🚚 Datos de entrega: retiro en el local (default) o con envío
   const [tipoEntrega, setTipoEntrega] = useState<'retiro' | 'envio'>('retiro')
   const [nombreCliente, setNombreCliente] = useState('')
   const [direccionCliente, setDireccionCliente] = useState('')
 
   const { items, agregarItem, cambiarCantidad, quitarItem, total, cantidadTotal } = useCartStore()
 
-  const itemsFiltrados = MENU_ITEMS.filter((item) => item.categoria === categoriaActiva)
+  // ⚡ LLAMADA A TU API DE VERCEL (Que consulta a Turso)
+  useEffect(() => {
+    fetch('/api/productos')
+      .then((res) => res.json())
+      .then((data) => {
+        // Adaptamos los datos de la BD a la estructura que espera tu componente visual
+        const productosAdaptados = data.map((dbItem: any) => ({
+          ...dbItem,
+          nombre: dbItem.titulo || dbItem.nombre, // Convertimos 'titulo' (BD) a 'nombre' (UI)
+          precio: Number(dbItem.precio),
+          // Por si en el futuro guardas variantes de precios como un JSON string en Turso
+          precios: typeof dbItem.precios === 'string' ? JSON.parse(dbItem.precios) : dbItem.precios
+        }))
+        setMenuItems(productosAdaptados)
+        setCargando(false)
+      })
+      .catch((err) => {
+        console.error("Error al cargar el menú:", err)
+        setCargando(false)
+      })
+  }, [])
+
+  const itemsFiltrados = menuItems.filter((item) => item.categoria === categoriaActiva)
 
   const faltanDatosDeEnvio =
     tipoEntrega === 'envio' && (!nombreCliente.trim() || !direccionCliente.trim())
@@ -105,7 +131,6 @@ export function MenuPanel() {
 
       {/* Contenedor dinámico según la vista activa */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-
         {vista === 'menu' ? (
           <>
             {/* Tabs de categoría horizontales */}
@@ -130,82 +155,86 @@ export function MenuPanel() {
 
             {/* Lista de productos */}
             <div className="flex-1 overflow-y-auto px-5 pb-6 flex flex-col">
-              {itemsFiltrados.map((item) => {
-                const tienePrecios = item.precios && item.precios.length > 0
-                const tamanoActual = tienePrecios ? (tamanosSeleccionados[item.id] || item.precios![0].tamano) : null
-                const precioActual = tienePrecios
-                  ? item.precios!.find(p => p.tamano === tamanoActual)?.precio || item.precios![0].precio
-                  : (item.precio || 0)
-
-                return (
-                  <div
-                    key={item.id}
-                    className="py-5 border-b border-zinc-800/50 flex flex-col gap-2"
-                  >
-                    <div className="flex justify-between items-start gap-4">
-                      <h3 className="font-black uppercase text-sm text-amber-500 tracking-wide">
-                        {item.nombre}
-                      </h3>
-                      <p className="font-bold text-sm text-white shrink-0">
-                        ${precioActual.toLocaleString('es-AR')}
-                      </p>
-                    </div>
-
-                    {item.descripcion && (
-                      <p className="text-sm text-zinc-400 leading-snug">
-                        ( {item.descripcion} )
-                      </p>
-                    )}
-
-                    {/* Selector de tamaños si el producto cuenta con variantes */}
-                    {tienePrecios && item.precios && (
-                      <div className="flex gap-2 mt-1">
-                        {item.precios.map((op) => (
-                          <button
-                            key={op.tamano}
-                            onClick={() => setTamanosSeleccionados(prev => ({ ...prev, [item.id]: op.tamano }))}
-                            className={`px-3 py-1 rounded-lg text-xs font-bold uppercase transition-colors ${
-                              tamanoActual === op.tamano
-                                ? 'bg-amber-500 text-zinc-950'
-                                : 'bg-zinc-900 text-zinc-400 hover:text-white'
-                            }`}
-                          >
-                            {op.tamano}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="mt-2 flex">
-                      <button
-                        onClick={() => {
-                          if (tienePrecios && tamanoActual) {
-                            agregarItem({
-                              id: `${item.id}-${tamanoActual}`,
-                              nombre: `${item.nombre} (${tamanoActual})`,
-                              precio: precioActual,
-                              categoria: item.categoria
-                            })
-                          } else {
-                            agregarItem({
-                              id: item.id,
-                              nombre: item.nombre,
-                              precio: item.precio || 0,
-                              categoria: item.categoria
-                            })
-                          }
-                        }}
-                        className="rounded-lg bg-zinc-900 border border-amber-500/30 text-amber-500 px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-amber-500 hover:text-zinc-950 transition-colors"
-                      >
-                        + Agregar
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
-
-              {itemsFiltrados.length === 0 && (
+              {cargando ? (
+                <div className="flex-1 flex items-center justify-center mt-12">
+                  <p className="text-zinc-500 text-sm animate-pulse uppercase tracking-widest font-bold">Cargando menú...</p>
+                </div>
+              ) : itemsFiltrados.length === 0 ? (
                 <p className="text-center text-zinc-500 text-sm mt-8">No hay productos en esta categoría.</p>
+              ) : (
+                itemsFiltrados.map((item) => {
+                  const tienePrecios = item.precios && item.precios.length > 0
+                  const tamanoActual = tienePrecios ? (tamanosSeleccionados[item.id] || item.precios[0].tamano) : null
+                  const precioActual = tienePrecios
+                    ? item.precios.find((p: any) => p.tamano === tamanoActual)?.precio || item.precios[0].precio
+                    : (item.precio || 0)
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="py-5 border-b border-zinc-800/50 flex flex-col gap-2"
+                    >
+                      <div className="flex justify-between items-start gap-4">
+                        <h3 className="font-black uppercase text-sm text-amber-500 tracking-wide">
+                          {item.nombre}
+                        </h3>
+                        <p className="font-bold text-sm text-white shrink-0">
+                          ${precioActual.toLocaleString('es-AR')}
+                        </p>
+                      </div>
+
+                      {item.descripcion && (
+                        <p className="text-sm text-zinc-400 leading-snug">
+                          ( {item.descripcion} )
+                        </p>
+                      )}
+
+                      {/* Selector de tamaños si el producto cuenta con variantes */}
+                      {tienePrecios && item.precios && (
+                        <div className="flex gap-2 mt-1">
+                          {item.precios.map((op: any) => (
+                            <button
+                              key={op.tamano}
+                              onClick={() => setTamanosSeleccionados(prev => ({ ...prev, [item.id]: op.tamano }))}
+                              className={`px-3 py-1 rounded-lg text-xs font-bold uppercase transition-colors ${
+                                tamanoActual === op.tamano
+                                  ? 'bg-amber-500 text-zinc-950'
+                                  : 'bg-zinc-900 text-zinc-400 hover:text-white'
+                              }`}
+                            >
+                              {op.tamano}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="mt-2 flex">
+                        <button
+                          onClick={() => {
+                            if (tienePrecios && tamanoActual) {
+                              agregarItem({
+                                id: `${item.id}-${tamanoActual}`,
+                                nombre: `${item.nombre} (${tamanoActual})`,
+                                precio: precioActual,
+                                categoria: item.categoria
+                              })
+                            } else {
+                              agregarItem({
+                                id: item.id,
+                                nombre: item.nombre,
+                                precio: item.precio || 0,
+                                categoria: item.categoria
+                              })
+                            }
+                          }}
+                          className="rounded-lg bg-zinc-900 border border-amber-500/30 text-amber-500 px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-amber-500 hover:text-zinc-950 transition-colors"
+                        >
+                          + Agregar
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })
               )}
             </div>
           </>
@@ -260,9 +289,6 @@ export function MenuPanel() {
                 </div>
               ))}
 
-              {/* 🚚 Formulario de entrega — solo tiene sentido si ya hay algo
-                  en el carrito. "Retiro" no pide nada más; "Con envío" pide
-                  nombre y dirección, obligatorios antes de poder enviar. */}
               {items.length > 0 && (
                 <div className="mt-2 flex flex-col gap-3">
                   <span className="text-xs font-mono uppercase tracking-widest text-zinc-400">

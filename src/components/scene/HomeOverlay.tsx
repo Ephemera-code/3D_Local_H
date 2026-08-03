@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
 import { siInstagram, siWhatsapp } from 'simple-icons'
 
 // 🖼️ Los assets dentro de /public NO se importan como módulo de JS (Vite no
@@ -10,30 +10,7 @@ interface HomeOverlayProps {
 }
 
 export function HomeOverlay({ visible }: HomeOverlayProps) {
-  // 🟢🔴 Estado real de abierto/cerrado, controlado por vos desde el bot de
-  // Telegram. null = todavía no llegó la respuesta (mostramos algo neutro
-  // mientras carga, para no afirmar "abierto" antes de saberlo con certeza).
-  const [abierto, setAbierto] = useState<boolean | null>(null)
-
-  useEffect(() => {
-    let cancelado = false
-
-    fetch('/api/estado')
-      .then((res) => res.json())
-      .then((data) => {
-        if (!cancelado) setAbierto(data.abierto)
-      })
-      .catch(() => {
-        // Si falla la consulta (sin internet, función caída, etc.), no
-        // dejamos el badge colgado — asumimos "abierto" como fallback
-        // seguro para no espantar clientes por un problema técnico nuestro.
-        if (!cancelado) setAbierto(true)
-      })
-
-    return () => {
-      cancelado = true
-    }
-  }, [])
+  const abierto = useMemo(() => true, [])
 
   if (!visible) return null
 
