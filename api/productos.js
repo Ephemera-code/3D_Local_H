@@ -6,7 +6,6 @@ const turso = createClient({
 });
 
 export default async function handler(req, res) {
-  // Permitir CORS por si tu frontend y tu bot consultan desde otro lado
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -17,19 +16,9 @@ export default async function handler(req, res) {
     return;
   }
 
-  // 1. OBTENER productos (Lo usa tu web de React)
+  // 1. OBTENER productos (Lo usa tu web de React y el bot)
   if (req.method === 'GET') {
     try {
-      // Asegurémonos de que la tabla exista por si acaso
-      await turso.execute(`
-        CREATE TABLE IF NOT EXISTS productos (
-          id TEXT PRIMARY KEY,
-          titulo TEXT NOT NULL,
-          precio REAL NOT NULL,
-          categoria TEXT
-        )
-      `);
-
       const result = await turso.execute("SELECT * FROM productos");
       return res.status(200).json(result.rows);
     } catch (error) {
@@ -37,25 +26,48 @@ export default async function handler(req, res) {
     }
   }
 
-  // 2. CREAR o ACTUALIZAR producto (Lo usa tu bot de Telegram)
+  // 2. CREAR o ACTUALIZAR producto (POST)
   if (req.method === 'POST') {
     try {
-      const { id, titulo, precio, categoria } = req.body;
+      const { id, categoria, nombre, descripcion, precio, precios } = req.body;
 
-      if (!id || !titulo || !precio) {
-        return res.status(400).json({ error: "Faltan datos obligatorios (id, titulo, precio)" });
+      if (!id || !nombre) {
+        return res.status(400).json({ error: "Faltan datos obligatorios (id, nombre)" });
       }
 
       await turso.execute({
-        sql: `INSERT INTO productos (id, titulo, precio, categoria) 
-              VALUES (?, ?, ?, ?) 
-              ON CONFLICT(id) DO UPDATE SET titulo = ?, precio = ?, categoria = ?`,
-        args: [id, titulo, precio, categoria || "", titulo, precio, categoria || ""],
+        sql: `INSERT INTO productos (id, categoria, nombre, descripcion, precio, precios) 
+              VALUES (?, ?, ?, ?, ?, ?) 
+              ON CONFLICT(id) DO UPDATE SET categoria = ?, nombre = ?, descripcion = ?, precio = ?, precios = ?`,
+        args: [
+          id, categoria || "", nombre, descripcion || "", precio || null, precios || null,
+          categoria || "", nombre, descripcion || "", precio || null, precios || null
+        ],
       });
 
       return res.status(200).json({ success: true, message: "Producto guardado correctamente" });
     } catch (error) {
       return res.status(500).json({ error: "Error al guardar el producto", details: error.message });
+    }
+  }
+
+  // 3. ACTUALIZAR SOLO EL PRECIO (Lo usa el bot de Telegram con PUT / PATCH)
+  if (req.method === 'PUT' || req.method === 'PATCH') {
+    try {
+      const { id, precio } = req.body;
+
+      if (!id || precio === undefined) {
+        return res.status(400).json({ error: "Faltan datos obligatorios (id, precio)" });
+      }
+
+      await turso.execute({
+        sql: `UPDATE productos SET precio = ? WHERE id = ?`,
+        args: [precio, id],
+      });
+
+      return res.status(200).json({ success: true, message: "Precio actualizado correctamente" });
+    } catch (error) {
+      return res.status(500).json({ error: "Error al actualizar el precio", details: error.message });
     }
   }
 
