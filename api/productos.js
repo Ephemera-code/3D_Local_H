@@ -40,8 +40,8 @@ export default async function handler(req, res) {
               VALUES (?, ?, ?, ?, ?, ?) 
               ON CONFLICT(id) DO UPDATE SET categoria = ?, nombre = ?, descripcion = ?, precio = ?, precios = ?`,
         args: [
-          id, categoria || "", nombre, descripcion || "", precio || null, precios || null,
-          categoria || "", nombre, descripcion || "", precio || null, precios || null
+          id, categoria || "", nombre, descripcion || "", precio !== undefined ? precio : null, precios ? JSON.stringify(precios) : null,
+          categoria || "", nombre, descripcion || "", precio !== undefined ? precio : null, precios ? JSON.stringify(precios) : null
         ],
       });
 
@@ -51,19 +51,31 @@ export default async function handler(req, res) {
     }
   }
 
-  // 3. ACTUALIZAR SOLO EL PRECIO (Lo usa el bot de Telegram con PUT / PATCH)
+  // 3. ACTUALIZAR PRECIO (Único o Múltiple) - Lo usa el bot con PUT / PATCH
   if (req.method === 'PUT' || req.method === 'PATCH') {
     try {
-      const { id, precio } = req.body;
+      const { id, precio, precios } = req.body;
 
-      if (!id || precio === undefined) {
-        return res.status(400).json({ error: "Faltan datos obligatorios (id, precio)" });
+      if (!id) {
+        return res.status(400).json({ error: "Falta el ID del producto" });
       }
 
-      await turso.execute({
-        sql: `UPDATE productos SET precio = ? WHERE id = ?`,
-        args: [precio, id],
-      });
+      // Si se envían precios múltiples (como las cervezas por tamaño)
+      if (precios !== undefined) {
+        await turso.execute({
+          sql: `UPDATE productos SET precios = ? WHERE id = ?`,
+          args: [JSON.stringify(precios), id],
+        });
+      } 
+      // Si se envía un precio fijo normal
+      else if (precio !== undefined) {
+        await turso.execute({
+          sql: `UPDATE productos SET precio = ? WHERE id = ?`,
+          args: [precio, id],
+        });
+      } else {
+        return res.status(400).json({ error: "Faltan datos de precio para actualizar" });
+      }
 
       return res.status(200).json({ success: true, message: "Precio actualizado correctamente" });
     } catch (error) {
