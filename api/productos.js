@@ -51,16 +51,21 @@ export default async function handler(req, res) {
     }
   }
 
-  // 3. ACTUALIZAR (Nombre, Precio o Precios) - Lo usa el bot con PUT / PATCH
+  // 3. ACTUALIZAR (Descripción, Nombre, Precios o Precio) - Lo usa el bot con PUT / PATCH
   if (req.method === 'PUT' || req.method === 'PATCH') {
     try {
-      const { id, precio, precios, nombre } = req.body;
+      const { id, precio, precios, nombre, descripcion } = req.body;
 
       if (!id) {
         return res.status(400).json({ error: "Falta el ID del producto" });
       }
 
-      if (nombre !== undefined) {
+      if (descripcion !== undefined) {
+        await turso.execute({
+          sql: `UPDATE productos SET descripcion = ? WHERE id = ?`,
+          args: [descripcion, id],
+        });
+      } else if (nombre !== undefined) {
         await turso.execute({
           sql: `UPDATE productos SET nombre = ? WHERE id = ?`,
           args: [nombre, id],
