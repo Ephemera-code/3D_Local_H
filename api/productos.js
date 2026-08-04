@@ -51,35 +51,37 @@ export default async function handler(req, res) {
     }
   }
 
-  // 3. ACTUALIZAR PRECIO (Único o Múltiple) - Lo usa el bot con PUT / PATCH
+  // 3. ACTUALIZAR (Nombre, Precio o Precios) - Lo usa el bot con PUT / PATCH
   if (req.method === 'PUT' || req.method === 'PATCH') {
     try {
-      const { id, precio, precios } = req.body;
+      const { id, precio, precios, nombre } = req.body;
 
       if (!id) {
         return res.status(400).json({ error: "Falta el ID del producto" });
       }
 
-      // Si se envían precios múltiples (como las cervezas por tamaño)
-      if (precios !== undefined) {
+      if (nombre !== undefined) {
+        await turso.execute({
+          sql: `UPDATE productos SET nombre = ? WHERE id = ?`,
+          args: [nombre, id],
+        });
+      } else if (precios !== undefined) {
         await turso.execute({
           sql: `UPDATE productos SET precios = ? WHERE id = ?`,
           args: [JSON.stringify(precios), id],
         });
-      } 
-      // Si se envía un precio fijo normal
-      else if (precio !== undefined) {
+      } else if (precio !== undefined) {
         await turso.execute({
           sql: `UPDATE productos SET precio = ? WHERE id = ?`,
           args: [precio, id],
         });
       } else {
-        return res.status(400).json({ error: "Faltan datos de precio para actualizar" });
+        return res.status(400).json({ error: "Faltan datos para actualizar" });
       }
 
-      return res.status(200).json({ success: true, message: "Precio actualizado correctamente" });
+      return res.status(200).json({ success: true, message: "Actualizado correctamente" });
     } catch (error) {
-      return res.status(500).json({ error: "Error al actualizar el precio", details: error.message });
+      return res.status(500).json({ error: "Error al actualizar", details: error.message });
     }
   }
 
